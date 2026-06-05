@@ -375,18 +375,4 @@ db.students.find()
 
 ---
 
-## Homework
-
-Create collection `employees` and insert **10 employee records**.
-
-Then perform each of the following — **5 examples each**:
-
-| Operation       | Count |
-|-----------------|-------|
-| `findOne()`     | 5 examples |
-| `updateOne()`   | 5 examples |
-| `updateMany()`  | 5 examples |
-| `deleteOne()`   | 5 examples |
-| `deleteMany()`  | 5 examples |
-
 > 📸 Take a **screenshot of the output** after every command.
