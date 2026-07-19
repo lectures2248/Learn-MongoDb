@@ -1,4 +1,4 @@
-# MongoDB Lecture 2.1 — Joining Collections
+# MongoDB Lecture — Joining Collections
 ### `$lookup`, `$unwind`, and `$replaceRoot` + `$mergeObjects`
 
 ---
