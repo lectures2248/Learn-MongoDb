@@ -1,5 +1,4 @@
 # Logical Operators
-### Session 2
 
 ---
 
