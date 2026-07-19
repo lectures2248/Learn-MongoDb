@@ -197,10 +197,61 @@ db.students.insertMany([
 db.students.find()
 ```
 
-To make the output easier to read:
+---
+
+### Projection in `find()`
+
+Projection means choosing exactly which fields you want to see in the output, instead of getting the entire document back every time.
+
+**Syntax:**
 
 ```javascript
-db.students.find().pretty()
+db.students.find(
+  { query condition },
+  { field: 0 or 1 }
+)
+```
+
+- `1` means **include** this field in the result
+- `0` means **exclude** this field from the result
+
+**Example — Find all students from the "inter" class, but hide the name field**
+
+```javascript
+db.students.find(
+  { class: "inter" },
+  { name: 0 }
+)
+```
+
+This returns every document where `class` is `"inter"`, but leaves the `name` field out of the result.
+
+**Example — Show only the name and age fields**
+
+```javascript
+db.students.find(
+  { class: "inter" },
+  { name: 1, age: 1 }
+)
+```
+
+A quick rule to remember: you cannot mix `0` and `1` in the same projection, except for the `_id` field. The `_id` field is always included by default unless you explicitly set it to `0`.
+
+```javascript
+db.students.find(
+  { class: "inter" },
+  { name: 1, age: 1, _id: 0 }
+)
+```
+
+**Step 8 — Count documents**
+
+```javascript
+db.students.countDocuments()
+```
+
+This returns the total number of records currently in the collection.
+
 ```
 
 **Step 8 — Count documents**
