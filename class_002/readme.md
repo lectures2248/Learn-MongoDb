@@ -1,378 +1,201 @@
-# MongoDB CRUD Operations – Practical Lecture
+# Logical Operators
+### Session 2
 
 ---
 
-## Today's Topics
+## 1. What Are Logical Operators?
 
-1. `findOne()`
-2. `updateOne()`
-3. `updateMany()`
-4. `deleteOne()`
-5. `deleteMany()`
+When you query a MongoDB collection, sometimes a single condition isn't enough. You might need to check two, three, or more conditions together — and decide whether **all** of them should match, or just **one**, or **none** at all.
+
+That's exactly what logical operators are for. They let you combine multiple conditions inside a query, the same way `AND`, `OR`, and `NOT` work in everyday logic or in SQL.
+
+**The four logical operators we'll cover:**
+
+| Operator | Meaning |
+|---|---|
+| `$and` | Selects documents that satisfy **all** the specified conditions |
+| `$or` | Selects documents that satisfy **at least one** of the specified conditions |
+| `$not` | Selects documents that do **not** match the specified condition |
+| `$nor` | Selects documents that do **not** match **any** of the specified conditions |
+
+Think of them as tools for asking more precise questions from your data — instead of one simple filter, you're now able to combine conditions the way you'd naturally think about a problem.
 
 ---
 
-## Step 1: Create Database
+## 2. Setting Up Sample Data
 
-```js
-use school
+Before we go through each operator, let's set up an `employee` collection so every example has real data to run against.
+
+**Step 1 — Create the collection**
+
+```javascript
+db.createCollection("employee")
 ```
 
----
+**Step 2 — Insert a single document**
 
-## Step 2: Create Collection
-
-```js
-db.createCollection("students")
+```javascript
+db.employee.insertOne({ name: "Ahmed", age: 18, address: "karachi" })
 ```
 
----
+**Step 3 — View the data**
 
-## Step 3: Insert Sample Data
+```javascript
+db.employee.find()
+```
 
-```js
-db.students.insertMany([
-  { name: "Ali",   age: 20, city: "Karachi",   course: "MERN" },
-  { name: "Ahmed", age: 22, city: "Lahore",     course: "Flutter" },
-  { name: "Sara",  age: 19, city: "Islamabad",  course: "Python" },
-  { name: "Hina",  age: 25, city: "Karachi",    course: "MERN" },
-  { name: "Usman", age: 27, city: "Karachi",    course: "Flutter" }
+**Step 4 — Find and update in one step**
+
+`findOneAndUpdate()` is a useful command that finds a matching document, updates it, and returns the original document as its result — all in a single call.
+
+```javascript
+db.employee.findOneAndUpdate(
+  { name: "Talha" },
+  { $set: { name: "Danish" } }
+)
+```
+
+Since no employee named "Talha" exists yet at this point, this command won't find a match. We'll insert one in the next step, and you're welcome to try this again afterward.
+
+**Step 5 — Insert a bigger dataset**
+
+This is the dataset we'll use for every logical operator example below.
+
+```javascript
+db.employee.insertMany([
+  { name: "Ali",     age: 28, department: "HR" },
+  { name: "Talha",   age: 35, department: "IT" },
+  { name: "Muzamil", age: 25, department: "Finance" },
+  { name: "Ahmed",   age: 30, department: "HR" },
+  { name: "Zain",    age: 22, department: "IT" }
 ])
 ```
 
-### Display All Records
-
-```js
-db.students.find()
-```
+Keep this dataset in mind as you go through the examples — it'll help you predict what each query should return before you even run it.
 
 ---
 
-## findOne()
+## 3. `$and` Operator
 
-Returns only **one** matching document.
+`$and` returns documents that satisfy **every single condition** you list. If even one condition fails, the document is excluded.
 
 **Syntax:**
-```js
-db.students.findOne({ condition })
+
+```javascript
+db.collection.find({
+  $and: [
+    { condition1 },
+    { condition2 }
+  ]
+})
 ```
 
-### Example 1 — Find by name
-```js
-db.students.findOne({ name: "Ali" })
+**Example — Find employees older than 25 who work in the HR department**
+
+```javascript
+db.employee.find({
+  $and: [
+    { age: { $gt: 25 } },
+    { department: "HR" }
+  ]
+})
 ```
 
-### Example 2 — Find by city
-```js
-db.students.findOne({ city: "Karachi" })
+**How to think about it:** Both conditions must be true at the same time — age greater than 25, **and** department equal to HR. Looking at our dataset, Ali (28, HR) and Ahmed (30, HR) both qualify, since they satisfy both conditions together.
+
+**A quick note:** In many cases, MongoDB lets you write an implicit `$and` just by listing multiple fields in one object, without the `$and` keyword:
+
+```javascript
+db.employee.find({ age: { $gt: 25 }, department: "HR" })
 ```
 
-### Example 3 — Find by course
-```js
-db.students.findOne({ course: "Flutter" })
-```
-
-### Example 4 — Find by age
-```js
-db.students.findOne({ age: 25 })
-```
-
-### Practice Tasks
-
-Find:
-1. Sara
-2. Ahmed
-3. Student from Lahore
-4. Student whose age is 27
+This works the same way for simple field-based conditions. You'll usually reach for the explicit `$and` syntax when you need to repeat the same field with different conditions, or combine more complex expressions.
 
 ---
 
-## updateOne()
+## 4. `$or` Operator
 
-Updates only **one** document.
+`$or` returns documents that satisfy **at least one** of the listed conditions. The document doesn't need to match all of them — just one is enough.
 
 **Syntax:**
-```js
-db.students.updateOne(
-  { condition },
-  { $set: { field: value } }
-)
+
+```javascript
+db.collection.find({
+  $or: [
+    { condition1 },
+    { condition2 }
+  ]
+})
 ```
 
-### Example 1 — Change Ali's age to 21
-```js
-db.students.updateOne(
-  { name: "Ali" },
-  { $set: { age: 21 } }
-)
+**Example — Find employees working in HR or IT department**
+
+```javascript
+db.employee.find({
+  $or: [
+    { department: "HR" },
+    { department: "IT" }
+  ]
+})
 ```
 
-### Example 2 — Change Ahmed's city to Karachi
-```js
-db.students.updateOne(
-  { name: "Ahmed" },
-  { $set: { city: "Karachi" } }
-)
-```
-
-### Example 3 — Change Sara's course to AI
-```js
-db.students.updateOne(
-  { name: "Sara" },
-  { $set: { course: "AI" } }
-)
-```
-
-### Example 4 — Add new field: Phone
-```js
-db.students.updateOne(
-  { name: "Ali" },
-  { $set: { phone: "03001234567" } }
-)
-```
-
-**Before:**
-```js
-{ name: "Ali", age: 21 }
-```
-
-**After:**
-```js
-{ name: "Ali", age: 21, phone: "03001234567" }
-```
-
-### Example 5 — Add Status field
-```js
-db.students.updateOne(
-  { name: "Usman" },
-  { $set: { status: "Active" } }
-)
-```
-
-### Practice Tasks
-
-1. Change Hina's city to Lahore
-2. Change Usman's age to 30
-3. Add Email field to Ahmed
-4. Add Semester field to Sara
+**How to think about it:** A document only needs to match one of the two conditions to show up. From our dataset, this returns Ali, Talha, Ahmed, and Zain — everyone except Muzamil, who's in Finance.
 
 ---
 
-## updateMany()
+## 5. `$not` Operator
 
-Updates **multiple** documents.
+`$not` returns documents that do **not** match a given condition. It's used to negate a single comparison, effectively flipping its meaning.
 
 **Syntax:**
-```js
-db.students.updateMany(
-  { condition },
-  { $set: { field: value } }
-)
+
+```javascript
+db.collection.find({
+  field: { $not: { comparison } }
+})
 ```
 
-### Example 1 — Update all Karachi students
-```js
-db.students.updateMany(
-  { city: "Karachi" },
-  { $set: { country: "Pakistan" } }
-)
+**Example — Find employees who are not younger than 25**
+
+```javascript
+db.employee.find({
+  age: { $not: { $lt: 25 } }
+})
 ```
 
-### Example 2 — Update all Flutter students
-```js
-db.students.updateMany(
-  { course: "Flutter" },
-  { $set: { trainer: "Mujtaba" } }
-)
-```
+**How to think about it:** `$lt: 25` on its own means "less than 25." Wrapping it inside `$not` flips that meaning to "not less than 25" — which is effectively the same as "25 or older." From our dataset, this returns Ali (28), Talha (35), Muzamil (25), and Ahmed (30). Zain (22) is excluded, since 22 is less than 25.
 
-### Example 3 — Add Status field to everyone
-```js
-db.students.updateMany(
-  {},
-  { $set: { status: "Active" } }
-)
-```
-
-### Example 4 — Add Institute field to all records
-```js
-db.students.updateMany(
-  {},
-  { $set: { institute: "ABC Institute" } }
-)
-```
+**A quick note:** `$not` is a bit different from `$and`, `$or`, and `$nor` — it works on a single field's condition, rather than combining multiple full conditions together.
 
 ---
 
-## $inc Operator
+## 6. `$nor` Operator
 
-Used to **increase numeric values**.
-
-### Example 1 — Increase Ali's age by 1
-```js
-db.students.updateOne(
-  { name: "Ali" },
-  { $inc: { age: 1 } }
-)
-```
-
-### Example 2 — Increase all ages by 2
-```js
-db.students.updateMany(
-  {},
-  { $inc: { age: 2 } }
-)
-```
-
-### Example 3 — Increase Karachi students' age by 5
-```js
-db.students.updateMany(
-  { city: "Karachi" },
-  { $inc: { age: 5 } }
-)
-```
-
-### Practice Tasks
-
-1. Increase Ahmed's age by 3
-2. Increase all ages by 1
-3. Increase Lahore students' age by 2
-
----
-
-## deleteOne()
-
-Deletes only **one** document.
+`$nor` returns documents that do **not** match **any** of the listed conditions. It's essentially the exact opposite of `$or`.
 
 **Syntax:**
-```js
-db.students.deleteOne({ condition })
+
+```javascript
+db.collection.find({
+  $nor: [
+    { condition1 },
+    { condition2 }
+  ]
+})
 ```
 
-### Example 1 — Delete Sara
-```js
-db.students.deleteOne({ name: "Sara" })
+**Example — Find employees not working in HR or Finance department**
+
+```javascript
+db.employee.find({
+  $nor: [
+    { department: "HR" },
+    { department: "Finance" }
+  ]
+})
 ```
 
-### Example 2 — Delete Ahmed
-```js
-db.students.deleteOne({ name: "Ahmed" })
-```
-
-### Example 3 — Delete first Karachi student
-```js
-db.students.deleteOne({ city: "Karachi" })
-```
-
-### Check Data
-```js
-db.students.find()
-```
-
-### Practice Tasks
-
-1. Delete Hina
-2. Delete Ali
-3. Delete one Lahore student
+**How to think about it:** A document is only included if it fails **both** conditions — meaning department is neither HR nor Finance. From our dataset, this returns Talha and Zain, since they're both in IT.
 
 ---
 
-## deleteMany()
-
-Deletes **multiple** documents.
-
-**Syntax:**
-```js
-db.students.deleteMany({ condition })
-```
-
-### Example 1 — Delete all Karachi students
-```js
-db.students.deleteMany({ city: "Karachi" })
-```
-
-### Example 2 — Delete all Flutter students
-```js
-db.students.deleteMany({ course: "Flutter" })
-```
-
-### Example 3 — Delete all students older than 25
-```js
-db.students.deleteMany({ age: { $gt: 25 } })
-```
-
-### Example 4 — Delete all students younger than 20
-```js
-db.students.deleteMany({ age: { $lt: 20 } })
-```
-
-### Example 5 — Delete all students from Lahore
-```js
-db.students.deleteMany({ city: "Lahore" })
-```
-
-### Delete All Documents
-
-```js
-db.students.deleteMany({})
-```
-
-> ⚠️ **WARNING:** This command removes **all documents** from the collection.
-
----
-
-## Final Practical
-
-### Insert Data
-```js
-db.students.insertMany([
-  { name: "Ahsan", age: 20, city: "Karachi" },
-  { name: "Bilal", age: 22, city: "Lahore" },
-  { name: "Hamza", age: 25, city: "Karachi" },
-  { name: "Saad",  age: 28, city: "Islamabad" },
-  { name: "Zara",  age: 19, city: "Karachi" }
-])
-```
-
-### Task 1 — Find Zara
-```js
-db.students.findOne({ name: "Zara" })
-```
-
-### Task 2 — Update Zara's city to Lahore
-```js
-db.students.updateOne(
-  { name: "Zara" },
-  { $set: { city: "Lahore" } }
-)
-```
-
-### Task 3 — Add Status field to all
-```js
-db.students.updateMany(
-  {},
-  { $set: { status: "Active" } }
-)
-```
-
-### Task 4 — Increase all ages by 1
-```js
-db.students.updateMany(
-  {},
-  { $inc: { age: 1 } }
-)
-```
-
-### Task 5 — Delete all Karachi students
-```js
-db.students.deleteMany({ city: "Karachi" })
-```
-
-### Task 6 — View remaining data
-```js
-db.students.find()
-```
-
----
-
-> 📸 Take a **screenshot of the output** after every command.
